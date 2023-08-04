@@ -6,7 +6,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import time
 
-train = False
+t0 = time.time()
+train = True
 bag_size = 1024
 if train:
     dataset = dm.IMDb_Dataset(train=True, bag_size=bag_size)
@@ -34,6 +35,7 @@ if train:
 
     print("Start training...")
 
+    t1 = time.time()
     for epoch in range(1, epoch_n + 1):
         loss_sum = 0
         for data_in, target in iter(dataloader):
@@ -49,9 +51,15 @@ if train:
         print(f"\n{100 * epoch // epoch_n}%")
         print(loss_sum / (dataset.len / dataloader.batch_size))
 
+    t1 = time.time() - t1
     print("Training is completed.")
     torch.save(obj=model.to("cpu"), f="model.pth")
     print("Model saved.")
+
+    t0 = time.time() - t0
+
+    print(f"Total time: {t0}s")
+    print(f"Learning time: {t1}s")
 
 else:
     dataset = dm.IMDb_Dataset(train=False, bag_size=bag_size)
