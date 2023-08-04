@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import time
 
-train = True
+train = False
 bag_size = 1024
 if train:
     dataset = dm.IMDb_Dataset(train=True, bag_size=bag_size)
@@ -18,8 +18,10 @@ if train:
     )
     
     model = nn.Sequential(
+        nn.Dropout(),
         nn.Linear(bag_size, 2 * bag_size + 1),
         nn.ReLU(),
+        nn.Dropout(),
         nn.Linear(2 * bag_size + 1, 2 * bag_size + 1),
         nn.ReLU(),
         nn.Linear(2 * bag_size + 1, 2)
@@ -61,7 +63,7 @@ else:
     )
 
     model = torch.load(f="model.pth")
-
+    model = model.eval()
     print("Start testing...")
 
     all = 0
