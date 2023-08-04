@@ -56,7 +56,7 @@ def genearte_BoW(*, dataset, bag_size, blocklist):
     word_dict = list(word_dict.keys())[:bag_size]
     return word_dict
 
-def get_words_density(text, bag):
+def get_words_count(text, bag):
     output = [0] * len(bag)
     s = 0
     for word in text.split():
@@ -109,7 +109,7 @@ class IMDb_Dataset(Dataset):
 
         print("Converting reviews to vectors...")
         for i in range(len(reviews)):
-            reviews[i] = get_words_density(reviews[i], BoW)
+            reviews[i] = get_words_count(reviews[i], BoW)
 
         self.reviews = reviews
         self.labels = labels

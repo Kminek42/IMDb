@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import time
 
-train = False
+train = True
 bag_size = 1024
 if train:
     dataset = dm.IMDb_Dataset(train=True, bag_size=bag_size)
