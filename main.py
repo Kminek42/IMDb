@@ -7,10 +7,66 @@ from torch.utils.data import DataLoader
 import time
 
 t0 = time.time()
+REVIEW_LEN = 1024
+EMBEDDING_DIM = 32
+HIDDEN_N = 1024
+
 train = True
-bag_size = 1024
+
+class ConvBlock(nn.Module):
+    def __init__(self, *args, channels, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.Conv = nn.Conv1d(channels, channels, 3, padding="same")
+        self.Activation = nn.ReLU()
+        self.Poll = nn.MaxPool1d(2)
+
+    def forward(self, X):
+        X = self.Conv(X)
+        X = self.Poll(X)
+        X = self.Activation(X)
+        return X
+
+class TextConvNet(nn.Module):
+    def __init__(self, *args, input_len, embedding_dim, dict_size, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.Embedding = nn.Embedding(dict_size, embedding_dim)
+
+        self.ConvBLock1 = ConvBlock(channels=embedding_dim)
+        self.ConvBLock2 = ConvBlock(channels=embedding_dim)
+        self.ConvBLock3 = ConvBlock(channels=embedding_dim)
+        self.ConvBLock4 = ConvBlock(channels=embedding_dim)
+
+        self.Lin1 = nn.Linear(embedding_dim * input_len // 16, input_len // 16)
+        self.Lin2 = nn.Linear(input_len // 16, 2)
+
+        self.Activation = nn.ReLU()
+
+    def forward(self, X):
+        X = self.Embedding(X).mT
+
+        X = self.ConvBLock1(X)
+        X = self.ConvBLock2(X)
+        X = self.ConvBLock3(X)
+        X = self.ConvBLock4(X)
+
+        X = nn.Flatten()(X)
+        X = self.Lin1(X)
+        X = self.Activation(X)
+        X = self.Lin2(X)
+
+        return X
+
+dev = torch.device("cpu")
+if torch.cuda.is_available():
+    dev = torch.device("cuda")
+
+elif torch.backends.mps.is_available():
+    dev = torch.device("mps")
+
+print(f"Using {dev} device")
+
 if train:
-    dataset = dm.IMDb_Dataset(train=True, bag_size=bag_size)
+    dataset = dm.IMDb_Dataset("train", REVIEW_LEN)
 
     dataloader = DataLoader(
         dataset=dataset,
@@ -18,15 +74,9 @@ if train:
         shuffle=True
     )
     
-    model = nn.Sequential(
-        nn.Dropout(),
-        nn.Linear(bag_size, 2 * bag_size + 1),
-        nn.ReLU(),
-        nn.Dropout(),
-        nn.Linear(2 * bag_size + 1, 2 * bag_size + 1),
-        nn.ReLU(),
-        nn.Linear(2 * bag_size + 1, 2)
-    )
+    model = TextConvNet(input_len=REVIEW_LEN, embedding_dim=EMBEDDING_DIM, dict_size=dataset.words_n).to(dev)
+    print(model)
+    input()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -39,10 +89,10 @@ if train:
     for epoch in range(1, epoch_n + 1):
         loss_sum = 0
         for data_in, target in iter(dataloader):
-            prediction = model.forward(data_in)
+            prediction = model.forward(data_in.to(dev))
 
             optimizer.zero_grad()
-            loss = criterion(prediction, target)
+            loss = criterion(prediction, target.to(dev))
             loss.backward()
             optimizer.step()
 
@@ -62,7 +112,7 @@ if train:
     print(f"Learning time: {t1}s")
 
 else:
-    dataset = dm.IMDb_Dataset(train=False, bag_size=bag_size)
+    dataset = dm.IMDb_Dataset("test", REVIEW_LEN)
 
     dataloader = DataLoader(
         dataset=dataset,
