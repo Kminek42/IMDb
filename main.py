@@ -69,23 +69,18 @@ if train:
 
     dataloader = DataLoader(
         dataset=dataset,
-        batch_size=64,
+        batch_size=256,
         shuffle=True
     )
     
     model = TextConvNet(input_len=REVIEW_LEN, embedding_dim=EMBEDDING_DIM, dict_size=dataset.words_n).to(dev)
-    try:
-        model = torch.load("model.pth").to(dev)
-    except:
-        pass
 
     print(model)
-    input()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    epoch_n = 4
+    epoch_n = 10
 
     print("Start training...")
 
