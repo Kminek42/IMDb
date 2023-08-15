@@ -34,8 +34,9 @@ class TextConvNet(nn.Module):
         self.ConvBLock2 = ConvBlock(channels=embedding_dim)
         self.ConvBLock3 = ConvBlock(channels=embedding_dim)
         self.ConvBLock4 = ConvBlock(channels=embedding_dim)
+        self.ConvBLock5 = ConvBlock(channels=embedding_dim)
 
-        self.Lin1 = nn.Linear(embedding_dim * input_len // 16, input_len // 8)
+        self.Lin1 = nn.Linear(embedding_dim * input_len // 32, input_len // 8)
         self.Lin2 = nn.Linear(input_len // 8, 2)
 
         self.Activation = nn.ReLU()
@@ -47,6 +48,7 @@ class TextConvNet(nn.Module):
         X = self.ConvBLock2(X)
         X = self.ConvBLock3(X)
         X = self.ConvBLock4(X)
+        X = self.ConvBLock5(X)
 
         X = nn.Flatten()(X)
         X = self.Lin1(X)
@@ -80,7 +82,7 @@ if train:
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    epoch_n = 10
+    epoch_n = 16
 
     print("Start training...")
 
