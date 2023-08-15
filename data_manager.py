@@ -4,14 +4,14 @@ from datasets import load_dataset
 import re
 
 def save_words(wordlist):
-    file = open("wordlist.txt", "w")
+    file = open("wordlist.txt", "w", encoding="utf-8")
     for word in wordlist:
         file.write(f"{word}\n")
     
     file.close()
 
 def load_words():
-    file = open("wordlist.txt", "r")
+    file = open("wordlist.txt", "r", encoding="utf-8")
     words = file.read().split()[:-1]
     file.close()
 

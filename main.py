@@ -7,9 +7,8 @@ from torch.utils.data import DataLoader
 import time
 
 t0 = time.time()
-REVIEW_LEN = 1024
+REVIEW_LEN = 2048
 EMBEDDING_DIM = 32
-HIDDEN_N = 1024
 
 train = True
 
@@ -36,8 +35,8 @@ class TextConvNet(nn.Module):
         self.ConvBLock3 = ConvBlock(channels=embedding_dim)
         self.ConvBLock4 = ConvBlock(channels=embedding_dim)
 
-        self.Lin1 = nn.Linear(embedding_dim * input_len // 16, input_len // 16)
-        self.Lin2 = nn.Linear(input_len // 16, 2)
+        self.Lin1 = nn.Linear(embedding_dim * input_len // 16, input_len // 8)
+        self.Lin2 = nn.Linear(input_len // 8, 2)
 
         self.Activation = nn.ReLU()
 
@@ -75,20 +74,25 @@ if train:
     )
     
     model = TextConvNet(input_len=REVIEW_LEN, embedding_dim=EMBEDDING_DIM, dict_size=dataset.words_n).to(dev)
+    try:
+        model = torch.load("model.pth").to(dev)
+    except:
+        pass
+
     print(model)
     input()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    epoch_n = 6
+    epoch_n = 4
 
     print("Start training...")
 
     t1 = time.time()
     for epoch in range(1, epoch_n + 1):
         loss_sum = 0
-        for data_in, target in iter(dataloader):
+        for i, (data_in, target) in enumerate(iter(dataloader)):
             prediction = model.forward(data_in.to(dev))
 
             optimizer.zero_grad()
@@ -120,7 +124,7 @@ else:
         shuffle=False
     )
 
-    model = torch.load(f="model.pth")
+    model = torch.load(f="model.pth").to(dev)
     model = model.eval()
     print("Start testing...")
 
@@ -128,8 +132,8 @@ else:
     good = 0
 
     for data_in, target in iter(dataloader):
-        prediction = model.forward(data_in)
-
+        prediction = model.forward(data_in.to(dev))
+        target = target.to(dev)
         for i in range(len(prediction)):
             if torch.argmax(prediction[i]) == target[i]:
                 good += 1
